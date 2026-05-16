@@ -22,3 +22,33 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend build outputs
+API/bin/
+API/obj/
+client/dist/
+
+# Database files (important!)
+*.db
+*.db-shm
+*.db-wal
+
+# Environment files (contains secrets)
+.env
+.env.local
+appsettings.Development.json
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Publish profiles
+*.pubxml.user
