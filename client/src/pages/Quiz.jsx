@@ -16,6 +16,7 @@ function Quiz() {
   const [isStarting, setIsStarting] = useState(false);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ADD THIS
 
   useEffect(() => {
     startQuiz();
@@ -56,7 +57,7 @@ function Quiz() {
     setAnswerSubmitted(true);
     
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-    setAnswers([...answers, {
+    setAnswers(prev => [...prev, {  // Changed to functional update
       question: currentQ.question,
       userAnswer: answer,
       correctAnswer: currentQ.correctAnswer,
@@ -76,13 +77,12 @@ function Quiz() {
   };
 
   const submitQuiz = async () => {
-    // Add the LAST answer (current question) to answers
-    const finalAnswers = [...answers, {
-        question: questions[currentIndex].question,
-        userAnswer: selectedAnswer,
-        correctAnswer: questions[currentIndex].correctAnswer,
-        timeToAnswer: Math.floor((Date.now() - startTime) / 1000)
-    }];
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    // IMPORTANT: DO NOT add the last answer again - it was already added in handleAnswer
+    // Just use the existing answers array (which already contains all answers including last)
+    const finalAnswers = answers;  // Use answers directly, don't add again!
     
     let score = 0;
     finalAnswers.forEach(ans => {
@@ -97,12 +97,14 @@ function Quiz() {
             answers: finalAnswers
         });
         
-        console.log('Submit response:', response.data); // Check if streak is returned
+        console.log('Submit response:', response.data);
         
         navigate(`/results/${sessionId}`, { state: { score, total: questions.length } });
     } catch (err) {
         console.error('Failed to submit quiz:', err);
         navigate('/dashboard');
+    } finally {
+        setIsSubmitting(false);
     }
 };
 
