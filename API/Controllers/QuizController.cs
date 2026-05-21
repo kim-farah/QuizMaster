@@ -19,40 +19,39 @@ public class QuizController : ControllerBase
     private readonly HttpClient _httpClient;
     private static readonly Random _random = new Random();
     
-    // Fallback question bank (used only if API fails)
     private readonly Dictionary<int, List<(string Question, List<string> Options, string CorrectAnswer)>> _questionBank = new()
     {
-        [17] = new() // Science
+        [17] = new() 
         {
             ("What is the chemical symbol for Gold?", new List<string> { "Go", "Gd", "Au", "Ag" }, "Au"),
             ("What is the hardest natural substance?", new List<string> { "Iron", "Diamond", "Steel", "Platinum" }, "Diamond"),
             ("What planet is known as the Red Planet?", new List<string> { "Jupiter", "Mars", "Venus", "Saturn" }, "Mars"),
         },
-        [18] = new() // Technology
+        [18] = new()
         {
             ("What does HTML stand for?", new List<string> { "Hyper Text Markup Language", "High Tech Modern Language", "Hyper Transfer Markup Language", "Home Tool Markup Language" }, "Hyper Text Markup Language"),
             ("Who created the World Wide Web?", new List<string> { "Bill Gates", "Steve Jobs", "Tim Berners-Lee", "Mark Zuckerberg" }, "Tim Berners-Lee"),
             ("What does CPU stand for?", new List<string> { "Central Processing Unit", "Computer Personal Unit", "Central Program Utility", "Core Processing Unit" }, "Central Processing Unit"),
         },
-        [21] = new() // Sports
+        [21] = new() 
         {
             ("How many players on a basketball team?", new List<string> { "5", "6", "7", "8" }, "5"),
             ("What sport is 'the beautiful game'?", new List<string> { "Basketball", "Tennis", "Soccer", "Baseball" }, "Soccer"),
             ("Touchdown points in NFL?", new List<string> { "3", "5", "6", "7" }, "6"),
         },
-        [23] = new() // History
+        [23] = new()
         {
             ("Who painted the Mona Lisa?", new List<string> { "Van Gogh", "Picasso", "Da Vinci", "Rembrandt" }, "Da Vinci"),
             ("WWII end year?", new List<string> { "1943", "1944", "1945", "1946" }, "1945"),
             ("First person on moon?", new List<string> { "Buzz Aldrin", "Neil Armstrong", "Yuri Gagarin", "Michael Collins" }, "Neil Armstrong"),
         },
-        [11] = new() // Movies
+        [11] = new() 
         {
             ("Director of Inception?", new List<string> { "Cameron", "Spielberg", "Nolan", "Tarantino" }, "Christopher Nolan"),
             ("Who played Jack in Titanic?", new List<string> { "Brad Pitt", "DiCaprio", "Matt Damon", "Johnny Depp" }, "Leonardo DiCaprio"),
             ("2020 Best Picture winner?", new List<string> { "1917", "Joker", "Parasite", "Once Upon a Time" }, "Parasite"),
         },
-        [12] = new() // Music
+        [12] = new() 
         {
             ("King of Pop?", new List<string> { "Elvis Presley", "Michael Jackson", "Prince", "Freddie Mercury" }, "Michael Jackson"),
             ("Band that performed 'Bohemian Rhapsody'?", new List<string> { "Beatles", "Led Zeppelin", "Queen", "Pink Floyd" }, "Queen"),
@@ -79,7 +78,7 @@ public class QuizController : ControllerBase
     }
     
 
-[HttpGet("generate/{categoryId}")]
+  [HttpGet("generate/{categoryId}")]
 public async Task<IActionResult> GenerateQuiz(int categoryId)
 {
     var userId = GetUserId();
@@ -96,40 +95,37 @@ public async Task<IActionResult> GenerateQuiz(int categoryId)
         var response = await _httpClient.GetAsync(url);
         var json = await response.Content.ReadAsStringAsync();
         
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        var responseCode = root.GetProperty("response_code").GetInt32();
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var triviaData = JsonSerializer.Deserialize<TriviaResponse>(json, options);
         
-        if (responseCode == 0 && root.TryGetProperty("results", out var results))
+        if (triviaData?.ResponseCode == 0 && triviaData.Results != null && triviaData.Results.Count > 0)
         {
             apiSuccess = true;
             
-            foreach (var result in results.EnumerateArray())
+            foreach (var q in triviaData.Results)
             {
-                var question = result.GetProperty("question").GetString() ?? "";
-                var correctAnswer = result.GetProperty("correct_answer").GetString() ?? "";
-                var incorrectAnswers = result.GetProperty("incorrect_answers").EnumerateArray()
-                    .Select(x => x.GetString() ?? "").ToList();
-                
-                var options = incorrectAnswers.ToList();
-                options.Add(correctAnswer);
-                options = options.OrderBy(x => Guid.NewGuid()).ToList();
+                var optionsList = q.IncorrectAnswers.Select(DecodeHtml).ToList();
+                optionsList.Add(DecodeHtml(q.CorrectAnswer));
+                optionsList = optionsList.OrderBy(x => Guid.NewGuid()).ToList();
                 
                 questions.Add(new
                 {
-                    Question = System.Net.WebUtility.HtmlDecode(question),
-                    Options = options.Select(o => System.Net.WebUtility.HtmlDecode(o)).ToList(),
-                    CorrectAnswer = System.Net.WebUtility.HtmlDecode(correctAnswer)
+                    Question = DecodeHtml(q.Question),
+                    Options = optionsList,
+                    CorrectAnswer = DecodeHtml(q.CorrectAnswer)
                 });
             }
         }
     }
+    
     catch (Exception ex)
     {
-        Console.WriteLine($"API Error: {ex.Message}");
+        Console.WriteLine($"Error: {ex.Message}");
     }
     
-    // ONLY use fallback if API failed or returned no questions
     if (!apiSuccess || questions.Count == 0)
     {
         if (!_questionBank.ContainsKey(categoryId))
@@ -163,8 +159,7 @@ public async Task<IActionResult> GenerateQuiz(int categoryId)
     return Ok(new { sessionId = session.Id, questions });
 }
     
-
-[HttpPost("submit")]
+    [HttpPost("submit")]
 public async Task<IActionResult> SubmitQuiz([FromBody] CompleteQuizDto dto)
 {
     var userId = GetUserId();
@@ -183,8 +178,7 @@ public async Task<IActionResult> SubmitQuiz([FromBody] CompleteQuizDto dto)
             UserAnswer = answer.UserAnswer,
             CorrectAnswer = answer.CorrectAnswer,
             IsCorrect = answer.UserAnswer == answer.CorrectAnswer,
-            TimeToAnswer = answer.TimeToAnswer,
-            AnsweredAt = DateTime.Now
+            TimeToAnswer = answer.TimeToAnswer
         };
         _context.QuizAnswers.Add(quizAnswer);
     }
@@ -198,45 +192,45 @@ public async Task<IActionResult> SubmitQuiz([FromBody] CompleteQuizDto dto)
     
     user.TotalXP += dto.Score;
     
-    // ===== CORRECT STREAK LOGIC =====
     var today = DateTime.Now.Date;
     var lastActive = user.LastActiveDate.Date;
-    var daysDifference = (today - lastActive).Days;
     
-    // First quiz ever (TotalXP equals this quiz's XP)
-    if (user.TotalXP == dto.Score)
+    if (user.TotalXP == dto.Score && user.CurrentStreak == 0)
     {
         user.CurrentStreak = 1;
         user.LongestStreak = 1;
     }
-    // Played yesterday - increase streak
-    else if (daysDifference == 1)
+    else if (lastActive == today)
+    {
+        
+    }
+    else if (lastActive == today.AddDays(-1))
     {
         user.CurrentStreak++;
-        if (user.CurrentStreak > user.LongestStreak)
-            user.LongestStreak = user.CurrentStreak;
     }
-    // Played same day - no change
-    else if (daysDifference == 0)
+    else
     {
-        // Keep current streak
+        user.CurrentStreak = 1;
     }
-    // Missed one or more days - reset to 0
-    else if (daysDifference > 1)
+    
+    if (user.CurrentStreak > user.LongestStreak)
     {
-        user.CurrentStreak = 0;
+        user.LongestStreak = user.CurrentStreak;
     }
     
     user.LastActiveDate = today;
     
+    _context.Entry(user).State = EntityState.Modified;
     await _context.SaveChangesAsync();
+    
+    var verifyUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
     
     return Ok(new
     {
         xpEarned = dto.Score,
         totalXP = user.TotalXP,
-        currentStreak = user.CurrentStreak,
-        longestStreak = user.LongestStreak,
+        currentStreak = verifyUser?.CurrentStreak ?? user.CurrentStreak,
+        longestStreak = verifyUser?.LongestStreak ?? user.LongestStreak,
         percentageScore = percentageScore
     });
 }
@@ -254,21 +248,6 @@ public async Task<IActionResult> SubmitQuiz([FromBody] CompleteQuizDto dto)
             _ => "General"
         };
     }
-
-    [HttpGet("test-api")]
-    [AllowAnonymous] 
-public async Task<IActionResult> TestApi()
-{
-    var url = "https://opentdb.com/api.php?amount=5&category=18&type=multiple";
-    var response = await _httpClient.GetAsync(url);
-    var json = await response.Content.ReadAsStringAsync();
-    
-    // Return the raw JSON to see what we're getting
-    return Ok(new { 
-        statusCode = response.StatusCode, 
-        rawJson = json 
-    });
-}
 }
 
 

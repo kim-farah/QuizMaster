@@ -51,8 +51,8 @@ public async Task<IActionResult> GetStats()
         averageScore = averageScore,
         totalQuizzes = totalQuizzes
     });
-}
-*/
+}*/
+
     [HttpGet("leaderboard")]
     public async Task<IActionResult> GetLeaderboard()
     {
@@ -69,8 +69,7 @@ public async Task<IActionResult> GetStats()
         
         return Ok(leaderboard);
     }
-    
-/*  
+
 [HttpGet("stats")]
 public async Task<IActionResult> GetStats()
 {
@@ -78,45 +77,17 @@ public async Task<IActionResult> GetStats()
     var user = await _context.Users.FindAsync(userId);
     if (user == null) return NotFound();
     
-    var totalQuizzes = await _context.QuizSessions
-        .Where(q => q.UserId == userId && q.CompletedAt != null)
-        .CountAsync();
-    
-    var averageScore = totalQuizzes > 0
-        ? (int)Math.Round(await _context.QuizSessions
-            .Where(q => q.UserId == userId && q.CompletedAt != null)
-            .AverageAsync(q => (double)q.Score))
-        : 0;
-    
-    return Ok(new
-    {
-        totalXP = user.TotalXP,
-        currentStreak = user.CurrentStreak,
-        longestStreak = user.LongestStreak,
-        averageScore = averageScore,
-        totalQuizzes = totalQuizzes
-    });
-}*/
-[HttpGet("stats")]
-public async Task<IActionResult> GetStats()
-{
-    var userId = GetUserId();
-    var user = await _context.Users.FindAsync(userId);
-    if (user == null) return NotFound();
-    
-    // ===== RESET STREAK IF DAYS MISSED =====
+     // ===== STREAK RESET LOGIC =====
     var today = DateTime.Now.Date;
     var lastActive = user.LastActiveDate.Date;
-    var daysDifference = (today - lastActive).Days;
+    var yesterday = today.AddDays(-1);
     
-    // If missed 1 or more days, reset streak to 0
-    if (daysDifference >= 1 && user.CurrentStreak > 0)
+    if (lastActive != today && user.CurrentStreak > 0)
     {
         user.CurrentStreak = 0;
         await _context.SaveChangesAsync();
-        Console.WriteLine($"Streak reset to 0 for user {user.Username} - missed {daysDifference} days");
     }
-    
+
     var totalQuizzes = await _context.QuizSessions
         .Where(q => q.UserId == userId && q.CompletedAt != null)
         .CountAsync();
@@ -159,5 +130,4 @@ public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto
     
     return Ok(new { message = "Password changed successfully" });
 }
-
 }

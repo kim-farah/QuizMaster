@@ -108,7 +108,7 @@ function Profile() {
             </div>
             <div className="profile-row">
               <span className="profile-label">Email:</span>
-              <span className="profile-value">{email || 'user@example.com'}</span>
+              <span className="profile-value">{email}</span>
             </div>
           </div>
         </div>

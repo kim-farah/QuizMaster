@@ -23,8 +23,7 @@ function Register() {
       sessionStorage.setItem('token', response.data.token);
       sessionStorage.setItem('userId', response.data.userId);
       sessionStorage.setItem('username', response.data.username);
-      
-      // Use window.location for guaranteed redirect
+      sessionStorage.setItem('email', response.data.email); 
       window.location.href = '/dashboard';
       
     } catch (err) {

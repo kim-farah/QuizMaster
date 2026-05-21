@@ -80,9 +80,8 @@ function Quiz() {
     if (isSubmitting) return;
     setIsSubmitting(true);
     
-    // IMPORTANT: DO NOT add the last answer again - it was already added in handleAnswer
-    // Just use the existing answers array (which already contains all answers including last)
-    const finalAnswers = answers;  // Use answers directly, don't add again!
+  
+    const finalAnswers = answers;
     
     let score = 0;
     finalAnswers.forEach(ans => {
