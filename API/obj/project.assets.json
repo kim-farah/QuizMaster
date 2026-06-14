@@ -3258,11 +3258,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\OneDrive\\Desktop\\FINAL-SEMESTER\\QuizMaster\\API\\API.csproj",
+      "projectUniqueName": "C:\\Users\\User\\OneDrive\\Desktop\\FINAL-SEMESTER\\QuizMaster-New\\API\\API.csproj",
       "projectName": "API",
-      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\FINAL-SEMESTER\\QuizMaster\\API\\API.csproj",
+      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\FINAL-SEMESTER\\QuizMaster-New\\API\\API.csproj",
       "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\OneDrive\\Desktop\\FINAL-SEMESTER\\QuizMaster\\API\\obj\\",
+      "outputPath": "C:\\Users\\User\\OneDrive\\Desktop\\FINAL-SEMESTER\\QuizMaster-New\\API\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"

@@ -192,33 +192,35 @@ public async Task<IActionResult> SubmitQuiz([FromBody] CompleteQuizDto dto)
     
     user.TotalXP += dto.Score;
     
-    var today = DateTime.Now.Date;
-    var lastActive = user.LastActiveDate.Date;
-    
-    if (user.TotalXP == dto.Score && user.CurrentStreak == 0)
-    {
-        user.CurrentStreak = 1;
-        user.LongestStreak = 1;
-    }
-    else if (lastActive == today)
-    {
-        
-    }
-    else if (lastActive == today.AddDays(-1))
-    {
-        user.CurrentStreak++;
-    }
-    else
-    {
-        user.CurrentStreak = 1;
-    }
-    
+var today = DateTime.Now.Date;
+var lastActive = user.LastActiveDate.Date;
+var daysDifference = (today - lastActive).Days;
+
+var hasPlayedBefore = await _context.QuizSessions
+    .AnyAsync(q => q.UserId == userId && q.CompletedAt != null);
+
+if (!hasPlayedBefore)
+{
+    user.CurrentStreak = 1;
+    user.LongestStreak = 1;
+}
+else if (lastActive == today.AddDays(-1))
+{
+    user.CurrentStreak++;
     if (user.CurrentStreak > user.LongestStreak)
-    {
         user.LongestStreak = user.CurrentStreak;
-    }
-    
-    user.LastActiveDate = today;
+}
+else if (lastActive == today)
+{
+  
+}
+
+else
+{
+    user.CurrentStreak = 1;
+}
+
+user.LastActiveDate = today;
     
     _context.Entry(user).State = EntityState.Modified;
     await _context.SaveChangesAsync();
